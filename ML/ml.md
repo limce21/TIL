@@ -323,3 +323,131 @@ s
 - rbf를 사용할 경우, C와 gamma 값이 클수록 결정경계면이 구불구불해진다.
 - Gamma 값은 결정 경계를 얼마나 유연하게 가져갈지 지정한다.
   - 감마값이 높으면 훈련 데이터에 많이 의존하기 때문에, 결정 경계가 곡선형태를 띄며 과적합을 초래할 수 있다.
+
+## 앙상블
+
+---
+
+### 집단 지성
+
+- 여러 사람이 모이면 정답을 찾을 가능성이 높다.
+
+### 앙상블
+
+: 강력한 하나의 모델을 사용하는 대신, 보다 약한 모델 여러 개를 조합하여 더 정확한 예측에 도움을 주는 방식
+
+- 많은 모델이 있기 때문에 한 모델에서 예측이 어긋나더라도 보정이 되는 효과가 있다.
+- 종류
+  - 보팅 (Voting)
+  - 배깅 (Bagging)
+  - 부스팅 (Boosting)
+
+### 보팅 분류 (Voting Classifier)
+
+- 하드 보팅 VS 소프트 보팅
+  !https://velog.velcdn.com/images/jiselectric/post/d3eabe8e-b223-4e6d-8a9f-3442f8767d9b/스크린샷 2021-01-24 17.42.36.png
+  - 하드 보팅
+    : 각 weak learner들의 예측 결과값을 바탕으로 `다수결` 투표하는 방식
+  - 소프트 보팅
+    : weak learner들의 예측 확률값의 평균 또는 가중치 합을 사용
+
+### 배깅 (Bagging)
+
+: Bootstrap Aggregating. 부트스트랩을 이용한다.
+
+!https://blog.kakaocdn.net/dn/pENgh/btqD2HbAWCW/Kp4UFJTjLOEzaq65CW3soK/img.png
+
+- Bootstrap
+  : 주어진 데이터셋에서 중복을 허락하고, Random Sampling하여 새로운 데이터셋을 만들어내는 것을 의미
+- 학습 데이터에서 여러 서브셋을 생성하고, 같은 종류의 분류기를 다양한 옵션으로 사용한다.
+
+### 랜덤 포레스트 (Random Forest)
+
+: 결정 트리를 사용하는 배깅
+
+!https://i.stack.imgur.com/eL7wc.jpg
+
+### 부스팅 (Boosting)
+
+: 앞의 분류기의 에러를 보완하는 약한 분류기를 차례로(Sequential) 연결하는 앙상블 기법
+
+!https://miro.medium.com/v2/resize:fit:1400/1*r24_G4jmjpffc8Xqhq2R1g.png
+
+- 아다부스트, 그래디언트 부스팅
+- 순서대로 진행 → 앞단계의 실행 결과를 보고 이를 보완하도록 알고리즘 실행
+  - 단, 시간이 오래 걸린다.
+
+### 아다부스트
+
+: 앞의 분류기에서 예측하지 못했던 데이터의 가중치를 높인다. (가중치를 업데이트한다)
+
+!https://miro.medium.com/v2/resize:fit:748/1*qzIPSA-HQlefxxZnPlb-2w.png
+
+- 가중치를 높인 데이터를 사용해서 새로운 데이터셋을 구성한다.
+- 새로운 데이터셋에서 분류기를 만든다.
+- 즉, 이전 분류기가 잘못 분류한 데이터에 더 집중하여 학습이 되도록 한다.
+
+### 그래디언트 부스팅 (GBM)
+
+- 아다부스트와 비슷하지만, 가중치 업데이트를 경사하강법을 이용한다.
+- Single Leaf로 시작하여, 이후 각 단계에서 이전 tree의 에러를 반영한 새로운 tree를 구축
+- Tree는 이전 단계에서 발생한 residual를 예측하는 방식으로 학습이 진행된다.
+- Gradient Boost Model = tree1 + tree2 + tree3
+
+⇒ 현재 가장 성능이 좋다.
+
+### Light GBM
+
+: GBM과 동일하게 순차적으로 tree를 생성하고 결합하는 방식으로 학습
+
+!https://entheoscientist.files.wordpress.com/2020/04/e37e7-1azssoxb8lc5n6mnhqx5jcg.png
+
+- 상대적으로 학습 시간 및 메모리 사용량이 단축 가능하다.
+- Light GBM은 Tree가 수직적으로 확장되는 반면에 다른 알고리즘은 Tree가 수평적으로 확장된다.
+
+### Categorical Boosting
+
+- Gradient Descent 방식으로 학습
+- 범주형 변수가 많은 데이터셋에서 높은 성능을 보인다.
+- Level-wise tree 분할 방식으로 tree의 균형을 유지하는 방식으로 분할된다.
+
+## 차원 축소
+
+---
+
+### 차원
+
+: 공간에서 데이터의 위치를 나타내기 위해 필요한 축(Axis)의 수
+
+<aside>
+💡 **차원의 저주**
+
+- 차원이 증가하면 정보의 밀도 감소 (필요한 데이터의 수가 지수 함수적 증가)
+- 정보의 감소로 과적합 문제가 발생하기 쉽다.
+</aside>
+
+### 투영 (Projection)
+
+- 차원 축소 알고리즘의 주요한 접근법의 하나
+
+### 주성분 분석 (PCA)
+
+: 분산이 최대로 되는 축을 선택하고, 축에 대해서 투영을 한다.
+
+!https://mblogthumb-phinf.pstatic.net/MjAyMTA4MTNfMTg5/MDAxNjI4ODU1NjA0Njgz.JlddZNCNmEI1w1fmzc8PHxemTVI2jEOYLQPXp1Eh6W8g.-c8TYbxrQlErlw8cwlkRuZbcn6ruN8RhwuydgsMGHr4g.GIF.paragonyun/PCA.gif?type=w800
+
+- 첫번째 축에 직교하고 남은 분산을 최대한 보존하는 두번째 축을 찾는다.
+- 가장 인기있는 차원 축소 알고리즘
+- 데이터의 분산을 가장 잘 유지하는 축들을 주성분이라고 한다.
+- 주성분으로 투영(Projection)한다.
+- 단점
+  - 데이터 분포에 선형성이 없다면 적용할 수 없다.
+  - 데이터의 클래스를 고려하지 않기 때문에 최대 분산 방향이 특징 구분을 좋게 한다고 보장할 수 없다.
+
+## K-평균 군집화 (K-Means Clustering)
+
+---
+
+1. 임의로 centroid 설정
+2. 가까운 centroid를 기준으로 클러스터 할당
+3. 각 클러스터 centroid 갱신
