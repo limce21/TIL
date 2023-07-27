@@ -190,18 +190,535 @@ document.createElement는 물리 DOM 객체를 생성하나, React.createElement
 
 ### 프로젝트 초기화 명령어
 
-| 명령 | 의미 |
-| ---- | ---- |
-
-| cd android
-./gradlew clean | ./gradlew installDebug 명령으로 생성된 임시 파일 삭제.
-원격 저장소에서 내려받은 패키지도 함께 삭제 |
-| rm -r -force .gradle(윈도우)
-rm -r .gradle(맥) | 빌드한 앱 삭제 |
-| cd ios
-xcodebuild clean | Xcode가 생성한 임시파일 삭제 |
-| pod deintegrate | npx pod-install 명령으로 내려받은 패키지 삭제 |
+| 명령                                             | 의미                                                                                                 |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| cd android && ./gradlew clean                    | `./gradlew installDebug` 명령으로 생성된 임시 파일 삭제. 원격 저장소에서 내려받은 패키지도 함께 삭제 |
+| rm -r -force .gradle (윈도우) rm -r .gradle (맥) | 빌드한 앱 삭제                                                                                       |
+| cd ios && xcodebuild clean                       | Xcode가 생성한 임시파일 삭제                                                                         |
+| pod deintegrate                                  | `npx pod-install` 명령으로 내려받은 패키지 삭제                                                      |
 
 ### 코드 디버깅
 
 ⇒ `console.log`를 통해 디버깅을 실행한다.
+
+## 2. JSX 구문 탐구하기
+
+---
+
+> JSX에 대해 알아보자
+
+### 프로젝트 만들기
+
+`npx react-native init ch02_2 --template react-native-template-typescript --npm`
+
+- **App.tsx에 다음과 같이 작성한다.**
+
+```java
+import React from 'react';
+import {SafeAreaView, Text} from 'react-native';
+
+export default function App() {
+  return (
+    <SafeAreaView>
+      <Text>Hello JSX world!</Text>
+    </SafeAreaView>
+  );
+}
+```
+
+- **실행하자**
+
+![](images/2-7.png)
+
+### React.createElement와 JSX 구문과의 관계
+
+- createElement 사용 방법
+  ⇒ `가상 DOM 객체 = createElement(컴포넌트_이름_또는_문자열, 속성_객체, 자식_컴포넌트)`
+
+## 3. 컴포넌트와 속성 이해하기
+
+---
+
+> 컴포넌트와 속성을 알아보자
+
+### 프로젝트 만들기
+
+`npx react-native init ch02_3 --template react-native-template-typescript --npm`
+
+### faker 외부 패키지 설치하기
+
+[Faker | Faker](https://fakerjs.dev/)
+
+- faker : 더미 데이터를 만드는 패키지
+- 설치 : `npm install @faker-js/faker --save-dev`
+- Trouble Shooting
+  ![](images/2-8.png)
+  워치맨 경고가 뜬 후 계속 실행이 안 됐다.
+  - 디렉토리에 기존 watch 제거
+    `watchman watch-del '/Users/lim/Desktop/STUDY/React-Native/ch02/ch02_3’`
+  - 디렉토리에 대한 Watch 다시 생성
+    `watchman watch-project '/Users/lim/Desktop/STUDY/React-Native/ch02/ch02_3’`
+
+**createRandomPerson.ts**
+
+```tsx
+import type { IPerson } from './IPerson';
+import * as F from './faker';
+import * as U from './util';
+
+export const createRandomPerson = (): IPerson => {
+	const name = F.randomName();
+	return {
+		id: F.randomId(),
+		createdDate: F.randomDate(),
+		modifiedDate: new Date(),
+		name,
+		email: F.randomEmail(),
+		avatar: F.randomAvatarUrl(name),
+		image: F.randomImage(),
+		comments: F.randomParagraphs(),
+		counts: {
+			comment: U.random(10, 100),
+			retweet: U.random(10, 100),
+			heart: U.random(100, 1000)
+		}
+	};
+};
+```
+
+**faker.ts**
+
+```tsx
+import { faker } from '@faker-js/faker';
+import * as U from './util';
+
+export const randomId = (): string => faker.string.uuid();
+export const randomName = (): string => faker.person.fullName();
+export const randomEmail = (): string => faker.internet.email();
+export const randomAvatarUrl = (name?: string): string => U.avatarUriByName(name ?? randomName());
+export const randomDate = (): Date => faker.date.recent();
+export const randomParagraphs = (count: number = 2): string => U.makeArray(count).map(faker.lorem.paragraph).join('\n');
+export const randomImage = (): string => U.unsplashUrl(U.random(800, 1000), U.random(800, 1000));
+```
+
+**IPerson.ts**
+
+```tsx
+export type IPerson = {
+	id: string;
+	createdDate: Date;
+	modifiedDate: Date;
+	name: string;
+	email: string;
+	avatar: string;
+	image: string;
+	comments: string;
+	counts: {
+		comment: number;
+		retweet: number;
+		heart: number;
+	};
+};
+```
+
+**\*\***\*\*\*\***\*\***utils.ts**\*\***\*\*\*\***\*\***
+
+```tsx
+// length 크기의 빈 배열 만들기
+export const makeArray = (length: number) => new Array(length).fill(null);
+
+// min에서 max 사이의 랜덤한 정수 값 출력하기
+export const random = (min: number, max: number): number => Math.round(Math.random() * (max - min)) + min;
+
+// width, height 만큼의 이미지 url을 랜덤하게 얻기
+export const unsplashUrl = (width: number, height: number): string => `https://source.unsplash.com/random/${width}x${height}`;
+
+// 이름을 제공하면 아바타 이미지를 제공하기
+export const avatarUriByName = (name: string) => `https://ui-avatars.com/api/?name=${name.split(' ').join('+')}`;
+```
+
+**index.ts**
+
+```tsx
+export * from './util';
+export * from './faker';
+export * from './IPerson';
+export * from './createRandomPerson';
+```
+
+**실행해보자**
+
+![](images/2-9.png)
+
+### 리액트 네이티브가 제공하는 두 가지 서비스
+
+1. 코어 컴포넌트
+
+   : 화면에 어떤 내용을 렌더링할 때 사용
+
+2. API
+
+   : 폰의 하드웨어나 운영체제가 제공하는 기능이 필요할 때 사용
+
+<aside>
+💡 **리액트는 자신만의 컴포넌트를 만들 수 있다. ⇒ 사용자 정의 컴포넌트**
+
+</aside>
+
+**[ 클래스 컴포넌트 만들기 ]**
+
+**ClassComponent.tsx**
+
+```tsx
+import React, { Component } from 'react';
+import { Text } from 'react-native';
+import * as D from '../data';
+
+const person = D.createRandomPerson();
+export default class ClassComponent extends Component {
+	render() {
+		return <Text>{JSON.stringify(person, null, 2)}</Text>;
+	}
+}
+```
+
+<aside>
+💡 **리액트와 리액트 네이티브에서 클래스 컴포넌트는 render 메서드를 가져야 한다.**
+
+</aside>
+
+- render 메서드는 null, undefined 또는 React.createElement 호출로 얻은 반환값이나 JSX문 중 하나를 반환해야 한다.
+
+**App.tsx**
+
+```tsx
+import React from 'react';
+import { SafeAreaView } from 'react-native';
+import ClassComponent from './src/screens/ClassComponent';
+
+export default function App() {
+	return (
+		<SafeAreaView>
+			<ClassComponent />
+		</SafeAreaView>
+	);
+}
+```
+
+**[ 화살표 방식 함수 컴포넌트 만들기 ]**
+
+<aside>
+💡 **보통 속성이 없는 컴포넌트는 function 키워드를 사용하고, 속성이 있다면 화살표 함수를 사용한다.**
+
+</aside>
+
+**ArrowComponent.tsx**
+
+```tsx
+import React from 'react';
+import { Text } from 'react-native';
+import * as D from '../data';
+
+const person = D.createRandomPerson();
+const ArrowComponent = () => {
+	return <Text>{JSON.stringify(person, null, 2)}</Text>;
+};
+
+export default ArrowComponent;
+```
+
+**App.tsx**
+
+```tsx
+import React from 'react';
+import { SafeAreaView } from 'react-native';
+import ClassComponent from './src/screens/ClassComponent';
+import ArrowComponent from './src/screens/ArrowComponent';
+
+export default function App() {
+	return (
+		<SafeAreaView>
+			<ClassComponent />
+			<ArrowComponent />
+		</SafeAreaView>
+	);
+}
+```
+
+![](images/2-10.png)
+
+### 속성이란?
+
+: 클래스의 멤버 변수
+
+- 리액트 네이티브와 리액트는 컴포넌트의 속성이 바뀌면 이를 즉각 반영한다. → `재렌더링`
+
+**[ JSX 속성 설정 구문 ]**
+
+- 모든 속성은 `따옴표`로 감싸야 한다.
+
+```jsx
+<Person name='Jack' />
+```
+
+- string과 달리 number 타입은 중괄호 기호(`{ }`)로 감싸야 한다.
+
+```jsx
+<Person name='Jack' age={22} />
+```
+
+- 속성값이 객체라면 `중괄호 기호 두개` 사용(안쪽은 객체를 만드는 구문, 바깥쪽은 JSX 구문)
+
+```jsx
+<Person person={{ name: 'Jack', age: 32 }} />
+```
+
+### 함수 컴포넌트 타입
+
+**[ 타입 스크립트로 함수 컴포넌트 구현하기 ]**
+
+**Person.tsx**
+
+```tsx
+import React from 'react';
+import type { FC } from 'react';
+import * as D from '../data';
+import { Text } from 'react-native';
+
+export type PersonProps = {
+	person: D.IPerson;
+};
+
+const Person: FC<PersonProps> = ({ person }) => {
+	return <Text>{JSON.stringify(person, null, 2)}</Text>;
+};
+
+export default Person;
+```
+
+**App.tsx**
+
+```tsx
+import React from 'react';
+import { SafeAreaView } from 'react-native';
+import ClassComponent from './src/screens/ClassComponent';
+import ArrowComponent from './src/screens/ArrowComponent';
+import Person from './src/screens/Person';
+import * as D from './src/data';
+
+const person = D.createRandomPerson();
+export default function App() {
+	return (
+		<SafeAreaView>
+			<ClassComponent />
+			<ArrowComponent />
+			<Person person={person} />
+		</SafeAreaView>
+	);
+}
+```
+
+![](images/2-11.png)
+
+### ScrollView 코어 컴포넌트와 key 속성
+
+- ScrollView 코어 컴포넌트
+  : ScrollView의 자식 컴포넌트에 원하는 컴포넌트를 넣으면 스크롤 기능을 사용할 수 있다.
+
+**App.tsx**
+
+```tsx
+import React from 'react';
+import { SafeAreaView, ScrollView } from 'react-native';
+import Person from './src/screens/Person';
+import * as D from './src/data';
+
+const people = D.makeArray(100).map(D.createRandomPerson);
+export default function App() {
+	const children = people.map((person) => <Person key={person.id} person={person} />);
+	return (
+		<SafeAreaView>
+			<ScrollView>{children}</ScrollView>
+		</SafeAreaView>
+	);
+}
+```
+
+![](images/2-12.png)
+
+<aside>
+💡 **모든 리액트와 리액트 네이티브 컴포넌트는 `key`, `children`, `ref` 등 3개 속성을 기본으로 가진다.**
+
+</aside>
+
+- key : 리액트 프레임워크가 컴포넌트의 렌더링 속도를 최적화하는 데 필요한 속성이다.
+  ⇒ 따라서 모든 자식 컴포넌트는 구분할 수 있는 키 값을 가져야 한다.
+
+## 4. 컴포넌트의 이벤트 속성 이해하기
+
+---
+
+> 사용자가 버튼을 터치하거나 텍스트를 입력했을 때 발생하는 이벤트를 처리하는 방법을 알아보자
+
+### 프로젝트 만들기
+
+`npx react-native init ch02_4 --template react-native-template-typescript --npm`
+
+### 이벤트 속성과 이벤트 처리기
+
+- 이벤트 콜백 함수, 이벤트 처리기 : 이벤트 속성에 붙는 콜백 함수
+
+**[ Button 코어 컴포넌트 ]**
+
+```jsx
+import { Button } from 'react-native';
+```
+
+- Button 코어 컴포넌트는 onPress 속성을 제공한다.
+
+```jsx
+<Button onPress={콜백_함수} />
+```
+
+- 콜백\_함수 형태는 다음과 같다
+
+```jsx
+콜백_함수 = () ⇒ { /* 함수 몸통 */ }
+```
+
+- 버튼에는 `title`과 [ `color` ] 속성을 제공한다.
+
+```jsx
+<Button title="home" color="blue" onPress={()=>console.log('home pressed.'} />
+```
+
+**[ Alert API ]**
+
+API?
+
+⇒ 리액트 네이티브에서 API는 JSX 구문에서 사용되는 코어 컴포넌트와 달리, 타입스크립트 코드에서 사용하는 기능을 의미한다.
+
+```jsx
+import { Alert } from 'react-native';
+```
+
+- Alert는 alert 정적 메시지를 제공해 해당 메서드를 호출하면 대화상자가 화면에 나타난다.
+
+```jsx
+static alert(타이틀, 메시지)
+```
+
+**[ 버튼을 누르면 대화상자가 나타나는 기능 ]**
+
+**App.tsx**
+
+```tsx
+import React from 'react';
+import { Alert, Button, SafeAreaView } from 'react-native';
+
+export default function App() {
+	return (
+		<SafeAreaView>
+			<Button title='Home' onPress={() => Alert.alert('home pressed.', 'message')} />
+		</SafeAreaView>
+	);
+}
+```
+
+![](images/2-13.png)
+
+<aside>
+⛔ **버튼의 디자인에 융통성이 없다.**
+
+</aside>
+
+**[ 터처블 코어 컴포넌트 ]**
+
+- `TouchableOpacity`, `TouchableHighlight`
+- 특징
+  1. 컴포넌트 영역에 터치가 일어나는 onPress 이벤트 속성에 설정된 이벤트 핸들러 콜백 함수를 호출한다.
+  2. 단 한개의 자식 컴포넌트만 올 수 있다.
+
+**TouchableOpacity**
+
+: 터치가 일어나면 컴포넌트 바탕색의 투명도를 바꾼다
+
+**App.tsx**
+
+```tsx
+import React from 'react';
+import { Alert, Button, SafeAreaView, Text, TouchableHighlight, TouchableOpacity } from 'react-native';
+
+const onPress = () => Alert.alert('home pressed.', 'message');
+export default function App() {
+	return (
+		<SafeAreaView>
+			<Button title='Home' onPress={onPress} />
+			<TouchableOpacity onPress={onPress}>
+				<Text>TouchableOpacity</Text>
+			</TouchableOpacity>
+			<TouchableHighlight onPress={onPress}>
+				<Text>TouchableHighlight</Text>
+			</TouchableHighlight>
+		</SafeAreaView>
+	);
+}
+```
+
+![](images/2-14.png)
+
+### TextInput 코어 컴포넌트
+
+: 텍스트를 입력받는다.
+
+```jsx
+import { TextInput } from 'react-native';
+```
+
+- 특징
+  1. `defaultValue` 속성에 초깃값을 설정할 수 있다.
+  2. 입력된 텍스트는 `value` 속성값으로 얻을 수 있다.
+  3. 텍스트가 입력될 때 `onChangeText` 이벤트 처리기를 실행한다.
+     - 함수 시그니처
+       ```jsx
+       onChangeText(text: string) => void
+       ```
+  4. `placeholder` 속성을 사용하여 어떤 값을 설정해야 하는지 문자열로 출력할 수 있다.
+  5. `editable` 속성값에 false를 설정하면 입력을 못하게(disable) 할 수 있다.
+  6. `keyboardType` 속성에 ‘default’, ‘numeric’, ‘email-address’ 등의 값을 설정할 수 있다.
+  7. 포커스를 가지게 하는 `focus` 메서드와 포커스를 잃게 하는 `blur` 메서드가 있다.
+  8. 텍스트를 입력할 수 있는 상태(포커스를 가진 상태)가 되면 onFocus 이벤트를 호출하고 텍스트를 입력할 수 없는 상태(포커스를 잃을 상태)가 되면 onBlur 이벤트를 호출한다.
+  9. 텍스트 입력이 모두 끝나면 `onEndEditing` 이벤트를 호출한다.
+  10. 자식 요소를 가지지 못한다.
+
+**App.tsx**
+
+```tsx
+import React from 'react';
+import { Alert, Button, SafeAreaView, Text, TextInput, TouchableHighlight, TouchableOpacity } from 'react-native';
+
+const onPress = () => Alert.alert('home pressed.', 'message');
+export default function App() {
+	return (
+		<SafeAreaView>
+			<Button title='Home' onPress={onPress} />
+			<TouchableOpacity onPress={onPress}>
+				<Text>TouchableOpacity</Text>
+			</TouchableOpacity>
+			<TouchableHighlight onPress={onPress}>
+				<Text>TouchableHighlight</Text>
+			</TouchableHighlight>
+			<TextInput placeholder='enter your name' onChangeText={(text: string) => console.log(text)} onFocus={() => console.log('onFocus')} onBlur={() => console.log('onBlur')} onEndEditing={() => console.log('onEndEditing')} />
+		</SafeAreaView>
+	);
+}
+```
+
+![](images/2-15.png)
+
+![](images/2-16.png)
+
+<aside>
+💡 **함수 시그니처** : 함수 선언문에서 함수 이름만 제외한 부분
+
+</aside>
